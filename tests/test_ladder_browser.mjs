@@ -62,6 +62,10 @@ page.on("request", (req) => {
   if (url.endsWith("/favicon.ico")) return req.abort();
   const rec = { phase, url, method: req.method(), headers: req.headers(), postData: req.postData() || null };
   requests.push(rec);
+  if (url === YIELD_URL && phase === "timeout") return;
+  if (url === YIELD_URL && phase === "http") {
+    return req.respond({ status: 503, contentType: "text/plain", headers: { "access-control-allow-origin": "*" }, body: "no" });
+  }
   if (url === YIELD_URL && queue.length) {
     const body = queue.shift();
     return req.respond({
@@ -190,17 +194,33 @@ try {
 
   const embedded = await page.evaluate(() => document.getElementById("embedded-yields").textContent);
   const before = await fp();
+  const diag = await page.evaluate(() => ({
+    empty: window.__ladder.acceptYieldResponseUrl(""),
+    good: window.__ladder.acceptYieldResponseUrl(window.__ladder.YIELD_URL),
+    evil: window.__ladder.acceptYieldResponseUrl("https://example.com/data/yields.json"),
+    redirect: window.__ladder.YIELD_REDIRECT,
+    timeout: window.__ladder.describeRefreshFailure(new DOMException("The operation was aborted.", "AbortError"), ""),
+    fetchErr: window.__ladder.describeRefreshFailure(new TypeError("Failed to fetch"), ""),
+    csp: window.__ladder.describeRefreshFailure(new TypeError("Failed to fetch"), "connect-src blocked https://example.com/exfil"),
+  }));
+  check(diag.empty === true && diag.good === true && diag.evil === false, "empty file:// response URL is accepted and other hosts are not");
+  check(diag.redirect === "error", "refresh does not follow redirects");
+  check(diag.timeout.startsWith("Timeout:") && diag.timeout.includes("15s"), "abort is reported as a 15s timeout: " + diag.timeout);
+  check(diag.fetchErr.startsWith("Fetch: TypeError:"), "fetch TypeError keeps its name: " + diag.fetchErr);
+  check(diag.csp.startsWith("CSP: connect-src blocked"), "CSP diagnosis names the directive: " + diag.csp);
   phase = "refresh-same";
   queue.push(embedded);
   await page.click("#btnRefreshYieldsTop");
   await page.waitForFunction(() => {
-    const t = document.getElementById("rfStatus").textContent;
+    const t = document.getElementById("refreshStatus").textContent;
     return t && !t.startsWith("Refreshing");
   });
   const afterSame = await fp();
-  const sameMsg = await page.$eval("#rfStatus", (el) => el.textContent);
+  const sameMsg = await page.$eval("#refreshStatus", (el) => el.textContent);
+  const panelOpen = await page.$eval("#yieldsPanel", (el) => el.open);
   check(before === afterSame, "same yields leave calculations unchanged");
-  check(sameMsg.includes("Yields updated"), "success message: " + sameMsg);
+  check(sameMsg.includes("Yields updated"), "header status shows success: " + sameMsg);
+  check(panelOpen === false, "success does not depend on the Yields panel being open");
   const sameReq = requests.filter((r) => r.phase === "refresh-same");
   check(sameReq.length === 1 && sameReq[0].method === "GET", "button sends one GET");
   check(sameReq[0] && sameReq[0].url === YIELD_URL && !sameReq[0].url.includes("?"), "GET url has no query string");
@@ -216,9 +236,8 @@ try {
   newer.tips.funds[0].enay = 1.11;
   phase = "refresh-newer";
   queue.push(JSON.stringify(newer));
-  await page.evaluate(() => { document.getElementById("yieldsPanel").open = true; });
-  await page.click("#btnRefreshYields");
-  await page.waitForFunction(() => document.getElementById("rfStatus").textContent.includes("Yields updated"));
+  await page.$eval("#btnRefreshYields", (el) => el.click());
+  await page.waitForFunction(() => document.getElementById("refreshStatus").textContent.includes("Yields updated"));
   const changed = await fp();
   check(changed !== before, "a changed yield changes the ladder");
   check(JSON.parse(changed).asOf === "2026-11-06", "fetched asOf newer than embedded is applied");
@@ -236,9 +255,9 @@ try {
   phase = "malformed";
   queue.push('{"not":"yields","<img>":true}');
   await page.click("#asOfBadge");
-  await page.waitForFunction(() => document.getElementById("rfStatus").textContent.startsWith("Refresh failed"));
+  await page.waitForFunction(() => document.getElementById("refreshStatus").textContent.startsWith("Validation:"));
   const afterBad = await fp();
-  const badMsg = await page.$eval("#rfStatus", (el) => el.textContent);
+  const badMsg = await page.$eval("#refreshStatus", (el) => el.textContent);
   check(afterBad === malformedFp, "malformed JSON is not applied");
   check(!badMsg.includes("<img>") && !badMsg.includes('"not"'), "failure message does not echo the payload");
   check(await page.evaluate(() => {
@@ -249,8 +268,19 @@ try {
   phase = "oversize";
   queue.push("{" + "A".repeat(300000));
   await page.evaluate(() => window.__ladder.refreshYields());
-  await page.waitForFunction(() => document.getElementById("rfStatus").textContent.includes("too large"));
+  await page.waitForFunction(() => /too large/i.test(document.getElementById("refreshStatus").textContent));
   check(await fp() === malformedFp, "oversized response is not applied");
+  phase = "json";
+  queue.push("not-json{{{");
+  await page.evaluate(() => window.__ladder.refreshYields());
+  await page.waitForFunction(() => document.getElementById("refreshStatus").textContent.startsWith("JSON:"));
+  check(await fp() === malformedFp, "invalid JSON is not applied");
+  const jsonMsg = await page.$eval("#refreshStatus", (el) => el.textContent);
+  check(!jsonMsg.includes("not-json"), "JSON failure does not echo the body");
+  phase = "http";
+  await page.evaluate(() => window.__ladder.refreshYields());
+  await page.waitForFunction(() => /HTTP 503/.test(document.getElementById("refreshStatus").textContent));
+  check(await fp() === malformedFp, "non-200 response is not applied");
 
   const older = JSON.parse(embedded);
   older.asOf = "2020-01-15";
@@ -260,7 +290,7 @@ try {
   phase = "older";
   queue.push(JSON.stringify(older));
   await page.evaluate(() => window.__ladder.refreshYields());
-  await page.waitForFunction(() => /older than this file/i.test(document.getElementById("rfStatus").textContent));
+  await page.waitForFunction(() => /older than this file/i.test(document.getElementById("refreshStatus").textContent));
   check(await fp() === malformedFp, "a download older than the embedded file is not applied");
 
   phase = "stored-old";
@@ -283,11 +313,25 @@ try {
   });
   check(blocked.fetchBlocked, "CSP blocks connect to other hosts");
   check(blocked.img !== "loaded", "CSP blocks image beacons");
+  await page.waitForFunction(() => (window.__yieldCspLog || []).some((t) => /connect-src blocked https:\/\/example.com/.test(t)));
+  check(true, "CSP listener records the blocked URI and directive");
+  await page.click("#btnCopyDiag");
+  const copied = await page.evaluate(() => window.__yieldCopied || "");
+  check(copied.includes(await page.evaluate(() => navigator.userAgent)) && !copied.includes("9876543") && !copied.includes("SECRET-NICK"), "copy diagnostics is the browser UA and the error, with no typed values");
   check(pageErrors.length === 0, "no page errors after refresh: " + pageErrors.join(" | "));
+  await page.evaluate(() => {
+    window.dispatchEvent(new ErrorEvent("error", {message: "probe-script-error", error: new Error("probe-script-error")}));
+  });
+  await page.waitForFunction(() => /probe-script-error/.test(document.getElementById("refreshStatus").textContent));
+  check(true, "a script error is shown in the header status line");
+  phase = "timeout";
+  await page.evaluate(() => window.__ladder.refreshYields());
+  await page.waitForFunction(() => document.getElementById("refreshStatus").textContent.startsWith("Timeout:"), { timeout: 20000 });
+  check(await fp() === await fp(), "timeout leaves the page usable");
 } catch (err) {
   failures.push(err && err.stack ? err.stack : String(err));
   try {
-    const status = await page.$eval("#rfStatus", (el) => el.textContent);
+    const status = await page.$eval("#refreshStatus", (el) => el.textContent);
     failures.push("status at failure: " + status);
   } catch { /* page already gone */ }
 } finally {
