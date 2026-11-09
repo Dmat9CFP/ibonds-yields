@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="version" content="2.5.2">
-<!-- v2.5.2: the only network request is a manual Refresh yields GET of public data from https://raw.githubusercontent.com (no credentials, no query string, no user data). Forms, image beacons, and every other host stay blocked. -->
+<meta name="version" content="2.5.3">
+<!-- v2.5.3: the only network request is a manual Refresh yields GET of public data from https://raw.githubusercontent.com (no credentials, no query string, no user data). Forms, image beacons, and every other host stay blocked. -->
 <meta http-equiv="Content-Security-Policy" content="connect-src https://raw.githubusercontent.com; form-action 'none'; img-src 'self' data: blob:; base-uri 'none'">
 <title>Retirement Income Ladder Builder</title>
 <style>
@@ -195,8 +195,15 @@ main.hhmain aside .card{position:static}
 .refreshbox ol{margin:6px 0 4px 18px;padding:0}
 .refreshbox li{margin:2px 0}
 .refreshbox code{font-size:11.5px;background:#eef1f5;padding:1px 4px;border-radius:4px}
-#rfStatus.bad{color:var(--bad);font-weight:650}
+#rfStatus.bad,#msg.bad{color:var(--bad);font-weight:650}
+#rfStatus.ok,#msg.ok{color:#067647;font-weight:650}
+#rfStatus.warn,#msg.warn{color:var(--warn);font-weight:650}
 button:disabled{opacity:.65;cursor:progress}
+#refreshStatus{color:#fff;font-size:12.5px;line-height:1.35;max-width:28rem}
+#refreshStatus.bad{color:#ffd7d2;font-weight:650}
+#refreshStatus.ok{color:#d9fbe8;font-weight:650}
+#refreshStatus.warn{color:#ffe1b0;font-weight:650}
+.copydiag{background:transparent;border:0;color:#fff;text-decoration:underline;font:inherit;font-size:11.5px;padding:2px 4px;cursor:pointer}
 table.small th,table.small td{padding:5px 7px;font-size:12.5px}
 #hhLibCard .libsum{display:flex;align-items:center;gap:8px;cursor:pointer;list-style:none}#hhLibCard .libsum::-webkit-details-marker{display:none}
 #hhLibCard .libsum::before{content:'▸';color:var(--muted);font-size:12px}#hhLibCard[open] .libsum::before{content:'▾'}
@@ -240,15 +247,56 @@ tr.sub td{font-weight:650;border-top:1px solid #b9c4d0}
 .ptab td.pt{white-space:nowrap}
 @media print{.cpbar,#copyToast{display:none!important}[data-copy]:hover{background:none;outline:none}}
 </style>
+<script>
+"use strict";
+(function(){
+  function clean(s){s=String(s==null?"":s).replace(/\s+/g," ").replace(/[<>]/g,"").trim();return s.length>360?s.slice(0,360):s}
+  window.__yieldLastStatus="";window.__yieldLastError="";window.__yieldCspText="";window.__yieldCsp=null;window.__yieldRefreshBusy=false;
+  window.__yieldShow=function(text,kind){
+    text=clean(text);window.__yieldLastStatus=text;if(kind==="bad"||kind==="warn")window.__yieldLastError=text;
+    ["refreshStatus","rfStatus","msg"].forEach(function(id){var el=document.getElementById(id);if(!el)return;el.textContent=text;el.classList.toggle("bad",kind==="bad");el.classList.toggle("ok",kind==="ok");el.classList.toggle("warn",kind==="warn");if(el.style)el.style.color=""});
+  };
+  window.__yieldRefresh=function(){window.__yieldShow("Refresh did not run. The page script stopped before it was ready.","bad")};
+  function onErr(prefix,err){var name=err&&err.name?err.name:"Error";var message=err&&err.message?err.message:"";window.__yieldShow(prefix+name+": "+message,"bad")}
+  window.addEventListener("error",function(e){
+    var err=e.error,msg=err&&err.message;
+    if(!msg||msg==="Script error.")msg=(e.message&&e.message!=="Script error.")?e.message:"details hidden by the browser";
+    onErr("Script error: ",{name:(err&&err.name)||"Error",message:msg});
+  });
+  window.addEventListener("unhandledrejection",function(e){var r=e.reason;onErr("Script error: ",(r&&r.name)?r:{name:"UnhandledRejection",message:String(r)})});
+  document.addEventListener("securitypolicyviolation",function(e){
+    var dir=e.effectiveDirective||e.violatedDirective||"csp",uri=e.blockedURI||"";
+    try{if(/^https?:/i.test(uri)){var u=new URL(uri);uri=u.origin+u.pathname}}catch(err){}
+    var text=clean(dir+" blocked "+uri);window.__yieldCspText=text;window.__yieldCsp={t:Date.now(),text:text};(window.__yieldCspLog=window.__yieldCspLog||[]).push(text);
+    if(window.__yieldRefreshBusy)window.__yieldShow("CSP: "+text,"bad");
+  });
+  window.__yieldCopyDiag=function(){
+    var text=clean("Browser: "+navigator.userAgent+" | Status: "+(window.__yieldLastStatus||"")+" | Error: "+(window.__yieldLastError||"")+" | CSP: "+(window.__yieldCspText||""));
+    window.__yieldCopied=text;
+    var btn=document.getElementById("btnCopyDiag"),prev=btn?btn.textContent:"";
+    function mark(ok){if(!btn)return;btn.textContent=ok?"Copied":"Copy failed";setTimeout(function(){btn.textContent=prev},1200)}
+    function fallback(){var ta=null;try{ta=document.createElement("textarea");ta.value=text;ta.setAttribute("readonly","");ta.style.cssText="position:fixed;left:-9999px;top:0";document.body.appendChild(ta);ta.focus();ta.select();var ok=document.execCommand("copy");mark(!!ok)}catch(e){mark(false)}finally{if(ta&&ta.parentNode)ta.parentNode.removeChild(ta)}}
+    try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(function(){mark(true)},fallback);return}}catch(e){}
+    fallback();
+  };
+  document.addEventListener("click",function(e){
+    var t=e.target;if(!t||!t.closest)return;
+    if(t.closest("#btnCopyDiag")){try{window.__yieldCopyDiag()}catch(err){onErr("Copy failed: ",err)}return}
+    if(t.closest("#btnRefreshYieldsTop,#btnRefreshYields,#asOfBadge")){try{window.__yieldRefresh()}catch(err){onErr("Script error: ",err)}}
+  });
+})();
+</script>
 </head>
 <body>
 <header class="top">
   <div>
     <h1>Retirement Income Ladder Builder</h1>
-    <div class="sub">Protected income ladder · iShares iBonds + PJTXX · internal planning tool · v2.5.2</div>
+    <div class="sub">Protected income ladder · iShares iBonds + PJTXX · internal planning tool · v2.5.3</div>
   </div>
   <button type="button" class="badge asofbtn" id="asOfBadge" title="Yield data date and age — click to refresh yields">Yields as of —</button>
   <button type="button" class="btn ghost no-print" id="btnRefreshYieldsTop">Refresh yields</button>
+  <span id="refreshStatus" class="refreshstatus no-print" role="status" aria-live="polite"></span>
+  <button type="button" class="copydiag no-print" id="btnCopyDiag">Copy diagnostics</button>
   <div class="spacer"></div>
   <div class="toolbar no-print">
     <button class="btn ghost" id="btnCsv">Export CSV</button>
@@ -435,7 +483,7 @@ tr.sub td{font-weight:650;border-top:1px solid #b9c4d0}
     <div style="margin-top:12px">
       <div class="refreshbox" id="refreshBox">
         <div><b>Refresh yields</b> · data as of <span id="rfAsOf">—</span> · <span class="age" id="rfAge"></span></div>
-        <div class="hint" style="margin-top:4px">Downloads the latest public iBonds yields when you click the button. Nothing you type is sent, and the page does not refresh on its own.</div>
+        <div class="hint" style="margin-top:4px">Downloads the latest public iBonds yields when you click the button. Nothing you type is sent, and the page does not refresh on its own. The result shows next to Refresh yields at the top of the page, even if this panel is closed.</div>
         <div class="toolbar" style="margin:8px 0 2px">
           <button type="button" class="btn primary small" id="btnRefreshYields">Refresh yields</button>
           <span id="rfStatus" class="muted" role="status"></span>
@@ -1355,11 +1403,13 @@ document.addEventListener('change',e=>{const el=e.target;if(!el.dataset||!el.dat
 [['asOf',v=>Y.asOf=v],['corpAsOf',v=>Y.corporate.enayAsOf=v],['treasAsOf',v=>Y.treasury.enayAsOf=v],['muniAsOf',v=>Y.muni.enayAsOf=v],['tipsAsOf',v=>Y.tips.enayAsOf=v],['realAsOf',v=>Y.tips.realYieldAsOf=v]].forEach(([id,fn])=>$(id).addEventListener('change',e=>{fn(e.target.value);render()}));
 $('btnResetYields').addEventListener('click',()=>{if(!confirm('Discard all yield overrides and imports stored in this browser?'))return;Y=clone(EMBED);S.pjYield=Y.pjtxx.yield;syncInputs();render();msg('Reset to embedded data ('+fmtDate(Y.asOf)+').')});
 $('btnDlJson').addEventListener('click',()=>download('yields.json',JSON.stringify(Y,null,2),'application/json'));
-function msg(t,bad){$('msg').textContent=t;$('msg').style.color=bad?'var(--bad)':''}
-function showYieldMsg(t,bad){msg(t,bad);const s=$('rfStatus');if(s){s.textContent=t;s.classList.toggle('bad',!!bad)}}
+function msg(t,bad){const el=$('msg');if(!el)return;el.textContent=t;el.style.color='';el.classList.toggle('bad',!!bad);el.classList.toggle('ok',false);el.classList.toggle('warn',false)}
+function showRefreshStatus(text,kind){if(typeof window.__yieldShow==='function')window.__yieldShow(text,kind||'');else{const el=$('refreshStatus');if(el)el.textContent=text}}
 // Public yield file only. The address is fixed: no query string, no inputs, no cookies.
 const YIELD_URL='https://raw.githubusercontent.com/Dmat9CFP/ibonds-yields/main/data/yields.json';
 const YIELD_MAX_BYTES=262144;
+const YIELD_TIMEOUT_MS=15000;
+const YIELD_REDIRECT='error';
 const YIELD_MIN_FUNDS=5, YIELD_MAX_FUNDS=80;
 const YIELD_SERIES=['corporate','tips','treasury','muni'];
 const YIELD_TICKER={tips:/^IBI[A-Z]$/,corporate:/^IB[DC][A-Z]$/,treasury:/^IBT[A-Z]$/,muni:/^IBM[A-Z]$/};
@@ -1412,41 +1462,74 @@ function validateYields(data){
   return {ok:true,value:out};
 }
 function applyYieldsDoc(doc){Y=clone(doc)}
-function setRefreshBusy(on){['btnRefreshYields','btnRefreshYieldsTop','asOfBadge'].forEach(id=>{const el=$(id);if(!el)return;el.disabled=!!on;if(id!=='asOfBadge')el.textContent=on?'Refreshing…':'Refresh yields'})}
-function revealYields(){try{if(typeof setTab==='function')setTab('single');const p=$('yieldsPanel');if(p)p.open=true}catch(e){}}
-function safeReason(err){let m=err&&err.name==='TypeError'?'network error':(err&&err.message)||'network error';m=String(m).replace(/\s+/g,' ').trim();if(!m||m.length>180||/[<>]/.test(m))return 'network error';return m}
-async function readCapped(res){
-  const len=res.headers.get('content-length');
-  if(len&&Number(len)>YIELD_MAX_BYTES)throw new Error('response too large');
-  if(!res.body||!res.body.getReader){const buf=await res.arrayBuffer();if(buf.byteLength>YIELD_MAX_BYTES)throw new Error('response too large');return new Uint8Array(buf)}
-  const reader=res.body.getReader();const chunks=[];let total=0;
-  while(true){const step=await reader.read();if(step.done)break;total+=step.value.byteLength;if(total>YIELD_MAX_BYTES){try{await reader.cancel()}catch(e){}throw new Error('response too large')}chunks.push(step.value)}
-  const out=new Uint8Array(total);let o=0;for(const c of chunks){out.set(c,o);o+=c.byteLength}return out;
+function setRefreshBusy(on){window.__yieldRefreshBusy=!!on;['btnRefreshYields','btnRefreshYieldsTop','asOfBadge'].forEach(id=>{const el=$(id);if(el)el.disabled=!!on})}
+function sanitizeDiag(s){s=String(s==null?'':s).replace(/\s+/g,' ').replace(/[<>]/g,'').trim();return s.length>360?s.slice(0,360):s}
+function failStep(kind,detail){const e=new Error(detail);e.name=kind;e.diag=true;return e}
+function describeRefreshFailure(err,csp){
+  if(csp)return sanitizeDiag('CSP: '+csp);
+  const name=err&&err.name||'Error',message=err&&err.message||'';
+  if(name==='AbortError')return 'Timeout: no response in 15s';
+  if(name==='TypeError')return sanitizeDiag('Fetch: TypeError: '+(message||'Failed to fetch'));
+  if(err&&err.diag)return sanitizeDiag(name+': '+message);
+  return sanitizeDiag('Script error: '+name+': '+message);
 }
+function acceptYieldResponseUrl(url){
+  if(url==null||url==='')return true;
+  try{const u=new URL(url);return u.origin==='https://raw.githubusercontent.com'&&u.pathname==='/Dmat9CFP/ibonds-yields/main/data/yields.json'&&!u.search&&!u.hash&&!u.username&&!u.password}
+  catch(e){return false}
+}
+function decodeYieldBytes(bytes){
+  if(typeof TextDecoder!=='function'){let s='';for(let i=0;i<bytes.length;i++)s+=String.fromCharCode(bytes[i]);try{return decodeURIComponent(escape(s))}catch(e){return s}}
+  let dec;try{dec=new TextDecoder('utf-8',{fatal:true})}catch(e){dec=new TextDecoder('utf-8')}
+  return dec.decode(bytes);
+}
+async function readCapped(res){
+  let len=0;try{len=Number(res.headers&&res.headers.get&&res.headers.get('content-length'))||0}catch(e){}
+  if(len>YIELD_MAX_BYTES)throw failStep('Size','response too large');
+  if(res.body&&typeof res.body.getReader==='function'){
+    try{
+      const reader=res.body.getReader();const chunks=[];let total=0;
+      while(true){const step=await reader.read();if(step.done)break;const chunk=step.value;total+=chunk.byteLength||chunk.length||0;if(total>YIELD_MAX_BYTES){try{await reader.cancel()}catch(e){}throw failStep('Size','response too large')}chunks.push(chunk)}
+      const out=new Uint8Array(total);let o=0;for(const c of chunks){out.set(c,o);o+=c.byteLength}return out;
+    }catch(err){if(err&&err.diag)throw err}
+  }
+  if(typeof res.arrayBuffer==='function'){const buf=await res.arrayBuffer();if(buf.byteLength>YIELD_MAX_BYTES)throw failStep('Size','response too large');return new Uint8Array(buf)}
+  throw failStep('Read','could not read response');
+}
+function cspSince(t){const c=window.__yieldCsp;return c&&c.t>=t?c.text:''}
 async function refreshYields(){
   if(refreshYields.busy)return;
-  refreshYields.busy=true;setRefreshBusy(true);showYieldMsg('Refreshing yields…',false);
+  refreshYields.busy=true;
+  const started=Date.now();let timer=null;
   try{
-    const res=await fetch(YIELD_URL,{method:'GET',mode:'cors',credentials:'omit',cache:'no-store',redirect:'follow',referrerPolicy:'no-referrer'});
-    let finalUrl;try{finalUrl=new URL(res.url)}catch(e){throw new Error('unexpected response')}
-    if(finalUrl.origin!=='https://raw.githubusercontent.com'||finalUrl.pathname!=='/Dmat9CFP/ibonds-yields/main/data/yields.json'||finalUrl.search||finalUrl.hash||finalUrl.username)throw new Error('unexpected response');
-    if(!res.ok)throw new Error('download failed ('+res.status+')');
-    const bytes=await readCapped(res);
-    let data;try{data=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes))}catch(e){throw new Error('not valid JSON')}
-    const v=validateYields(data);
-    if(!v.ok)throw new Error(v.error);
-    if(v.value.asOf<EMBED.asOf){showYieldMsg('Downloaded yields ('+fmtDate(v.value.asOf)+') are older than this file ('+fmtDate(EMBED.asOf)+'). Kept the newer embedded data.',false);return}
+    setRefreshBusy(true);showRefreshStatus('Refreshing…','');
+    const opts={method:'GET',mode:'cors',credentials:'omit',cache:'no-store',redirect:YIELD_REDIRECT,referrerPolicy:'no-referrer'};
+    let ctrl=null;try{if(typeof AbortController==='function')ctrl=new AbortController()}catch(e){}
+    if(ctrl){opts.signal=ctrl.signal;timer=setTimeout(()=>{try{ctrl.abort()}catch(e){}},YIELD_TIMEOUT_MS)}
+    let res;
+    try{res=await fetch(YIELD_URL,opts)}
+    catch(err){
+      await new Promise(r=>setTimeout(r,0));
+      const csp=cspSince(started);if(csp)throw failStep('CSP',csp);
+      throw err;
+    }
+    if(!acceptYieldResponseUrl(res&&res.url))throw failStep('Response','unexpected response URL');
+    if(!res.ok)throw failStep('HTTP','download failed (HTTP '+res.status+')');
+    let bytes;try{bytes=await readCapped(res)}catch(err){if(err&&(err.diag||err.name==='AbortError'))throw err;throw failStep('Read',(err&&err.name||'Error')+': '+(err&&err.message||'could not read response'))}
+    let data;try{data=JSON.parse(decodeYieldBytes(bytes))}catch(err){throw failStep('JSON',(err&&err.name||'SyntaxError')+': not valid JSON')}
+    let v;try{v=validateYields(data)}catch(err){throw failStep('Validation',(err&&err.name||'Error')+': '+(err&&err.message||'validation failed'))}
+    if(!v.ok)throw failStep('Validation',v.error||'validation failed');
+    if(v.value.asOf<EMBED.asOf){showRefreshStatus('Older than embedded: downloaded yields ('+fmtDate(v.value.asOf)+') are older than this file ('+fmtDate(EMBED.asOf)+'). Kept the newer embedded data.','warn');return}
     applyYieldsDoc(v.value);render();
-    showYieldMsg('Yields updated · as of '+fmtDate(Y.asOf)+'.',false);
+    showRefreshStatus('Yields updated · as of '+fmtDate(Y.asOf)+'.','ok');
   }catch(err){
-    showYieldMsg('Refresh failed ('+safeReason(err)+'). Import a BlackRock file if you are offline.',true);
+    showRefreshStatus(describeRefreshFailure(err,cspSince(started)),'bad');
   }finally{
-    refreshYields.busy=false;setRefreshBusy(false);revealYields();
+    if(timer)clearTimeout(timer);
+    refreshYields.busy=false;setRefreshBusy(false);
   }
 }
-$('asOfBadge').addEventListener('click',()=>{refreshYields()});
-$('btnRefreshYields').addEventListener('click',()=>{refreshYields()});
-$('btnRefreshYieldsTop').addEventListener('click',()=>{refreshYields()});
+window.__yieldRefresh=refreshYields;
 
 // ---------- XLS / XLSX / CSV import ----------
 const drop=$('drop');
@@ -1464,7 +1547,7 @@ async function handleFiles(files){
 }
 window.__ladder.importBuffer=async(buf,name)=>{const m=await importU8(new Uint8Array(buf),name);render();return m};
 window.__ladder.yieldAge=yieldAge;window.__ladder.blkEnay=blkEnay;
-window.__ladder.validateYields=validateYields;window.__ladder.applyYieldsDoc=applyYieldsDoc;window.__ladder.refreshYields=refreshYields;window.__ladder.YIELD_URL=YIELD_URL;
+window.__ladder.validateYields=validateYields;window.__ladder.applyYieldsDoc=applyYieldsDoc;window.__ladder.refreshYields=refreshYields;window.__ladder.YIELD_URL=YIELD_URL;window.__ladder.YIELD_REDIRECT=YIELD_REDIRECT;window.__ladder.acceptYieldResponseUrl=acceptYieldResponseUrl;window.__ladder.describeRefreshFailure=describeRefreshFailure;window.__yieldRefresh=refreshYields;
 async function importU8(u8,name){
   let i=0;while(i<u8.length&&i<64&&(u8[i]===0x20||u8[i]===0x0A||u8[i]===0x0D||u8[i]===0x09||u8[i]===0xEF||u8[i]===0xBB||u8[i]===0xBF))i++;
   if(u8[i]===0x5B||u8[i]===0x7B){let j;try{j=JSON.parse(new TextDecoder().decode(u8))}catch(e){throw new Error('not valid JSON — save the BlackRock data file as-is ('+e.message+')')}

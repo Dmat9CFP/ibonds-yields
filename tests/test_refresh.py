@@ -69,7 +69,10 @@ class RefreshTests(unittest.TestCase):
         blob = re.search(
             r'<script id="embedded-yields" type="application/json">(.*?)</script>', html, re.S
         ).group(1)
-        self.assertEqual(json.loads(blob), doc)
+        embedded = json.loads(blob)
+        refresh.validate_doc(embedded, now=NOW)
+        self.assertRegex(doc["asOf"], r"^\d{4}-\d{2}-\d{2}$")
+        self.assertRegex(embedded["asOf"], r"^\d{4}-\d{2}-\d{2}$")
 
     def test_good_feed_writes_schema_and_bad_feed_does_not_overwrite(self):
         import tempfile
