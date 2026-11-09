@@ -1,0 +1,54 @@
+name: Refresh iBonds yields
+
+on:
+  schedule:
+    # Weekdays after the US cash close. 22:30 UTC is 5:30pm EST / 6:30pm EDT.
+    - cron: "30 22 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-ibonds-yields
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+
+      - name: Download and validate yields
+        run: python3 refresh.py
+
+      - name: Confirm data/yields.json still validates
+        run: python3 -c "import json, refresh; refresh.validate_doc(json.load(open('data/yields.json')))"
+
+      - name: Commit data/yields.json when it changed
+        run: |
+          set -eu
+          if git diff --quiet -- data/yields.json; then
+            echo "No change in data/yields.json"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- data/yields.json
+          extra=$(git diff --cached --name-only | grep -vx 'data/yields.json' || true)
+          if [ -n "$extra" ]; then
+            echo "Refusing to commit unexpected files:"
+            echo "$extra"
+            exit 1
+          fi
+          git commit -m "Update iBonds yields"
+          git push
