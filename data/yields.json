@@ -1,5 +1,5 @@
 {
-  "asOf": "2026-11-06",
+  "asOf": "2026-11-09",
   "notes": "ENAY = BlackRock iBonds ladder tool Estimated Net Acquisition Yield (previous-close basis, net expense ratio), computed from the tool's data feed with the tool's formula. TIPS realYield = yield to worst (real) from the same feed. Treasury/muni/corporate ytm = weighted avg YTM (yield to worst where the feed omits it). Muni ENAY is tax-exempt, not tax-equivalent.",
   "pjtxx": {
     "ticker": "PJTXX",
@@ -9,345 +9,345 @@
     "yieldBasis": "7-day SEC yield (fact sheet)"
   },
   "corporate": {
-    "enayAsOf": "2026-11-06",
+    "enayAsOf": "2026-11-09",
     "funds": [
       {
         "ticker": "IBDS",
         "maturity": 2027,
         "name": "iShares iBonds Dec 2027 Term Corporate ETF",
-        "prevClose": 24.1,
-        "ytm": 4.73,
-        "enay": 4.55
+        "prevClose": 24.09,
+        "ytm": 4.74,
+        "enay": 4.7
       },
       {
         "ticker": "IBDT",
         "maturity": 2028,
         "name": "iShares iBonds Dec 2028 Term Corporate ETF",
         "prevClose": 25.0,
-        "ytm": 5.03,
+        "ytm": 5.06,
         "enay": 4.92
       },
       {
         "ticker": "IBDU",
         "maturity": 2029,
         "name": "iShares iBonds Dec 2029 Term Corporate ETF",
-        "prevClose": 22.82,
-        "ytm": 5.23,
-        "enay": 5.09
+        "prevClose": 22.81,
+        "ytm": 5.24,
+        "enay": 5.14
       },
       {
         "ticker": "IBDV",
         "maturity": 2030,
         "name": "iShares iBonds Dec 2030 Term Corporate ETF",
-        "prevClose": 21.35,
+        "prevClose": 21.33,
         "ytm": 5.34,
-        "enay": 5.2
+        "enay": 5.24
       },
       {
         "ticker": "IBDW",
         "maturity": 2031,
         "name": "iShares iBonds Dec 2031 Term Corporate ETF",
         "prevClose": 20.3,
-        "ytm": 5.52,
-        "enay": 5.4
+        "ytm": 5.53,
+        "enay": 5.42
       },
       {
         "ticker": "IBDX",
         "maturity": 2032,
         "name": "iShares iBonds Dec 2032 Term Corporate ETF",
         "prevClose": 24.42,
-        "ytm": 5.54,
-        "enay": 5.41
+        "ytm": 5.55,
+        "enay": 5.43
       },
       {
         "ticker": "IBDY",
         "maturity": 2033,
         "name": "iShares iBonds Dec 2033 Term Corporate ETF",
-        "prevClose": 24.9,
-        "ytm": 5.68,
-        "enay": 5.56
+        "prevClose": 24.92,
+        "ytm": 5.67,
+        "enay": 5.55
       },
       {
         "ticker": "IBDZ",
         "maturity": 2034,
         "name": "iShares iBonds Dec 2034 Term Corporate ETF",
-        "prevClose": 25.13,
-        "ytm": 5.75,
-        "enay": 5.61
+        "prevClose": 25.12,
+        "ytm": 5.73,
+        "enay": 5.62
       },
       {
         "ticker": "IBCA",
         "maturity": 2035,
         "name": "iShares iBonds Dec 2035 Term Corporate ETF",
-        "prevClose": 24.61,
-        "ytm": 5.79,
-        "enay": 5.67
+        "prevClose": 24.63,
+        "ytm": 5.78,
+        "enay": 5.66
       },
       {
         "ticker": "IBCB",
         "maturity": 2036,
         "name": "iShares iBonds Dec 2036 Term Corporate ETF",
-        "prevClose": 24.14,
-        "ytm": 5.94,
+        "prevClose": 24.16,
+        "ytm": 5.93,
         "enay": 5.82
       }
     ]
   },
   "tips": {
-    "enayAsOf": "2026-11-06",
-    "realYieldAsOf": "2026-11-06",
+    "enayAsOf": "2026-11-09",
+    "realYieldAsOf": "2026-11-09",
     "funds": [
       {
         "ticker": "IBID",
         "maturity": 2027,
         "name": "iShares iBonds Oct 2027 Term TIPS ETF",
-        "prevClose": 25.86,
-        "ytm": 4.46,
-        "enay": 4.21,
-        "realYield": 3.78
+        "prevClose": 25.84,
+        "ytm": 4.57,
+        "enay": 4.4,
+        "realYield": 3.94
       },
       {
         "ticker": "IBIE",
         "maturity": 2028,
         "name": "iShares iBonds Oct 2028 Term TIPS ETF",
-        "prevClose": 25.73,
-        "ytm": 4.39,
-        "enay": 4.21,
-        "realYield": 2.9
+        "prevClose": 25.69,
+        "ytm": 4.43,
+        "enay": 4.3,
+        "realYield": 2.98
       },
       {
         "ticker": "IBIF",
         "maturity": 2029,
         "name": "iShares iBonds Oct 2029 Term TIPS ETF",
-        "prevClose": 25.57,
+        "prevClose": 25.51,
         "ytm": 4.56,
-        "enay": 4.4,
-        "realYield": 2.64
+        "enay": 4.44,
+        "realYield": 2.7
       },
       {
         "ticker": "IBIG",
         "maturity": 2030,
         "name": "iShares iBonds Oct 2030 Term TIPS ETF",
-        "prevClose": 25.39,
+        "prevClose": 25.33,
         "ytm": 4.69,
-        "enay": 4.56,
-        "realYield": 2.52
+        "enay": 4.57,
+        "realYield": 2.58
       },
       {
         "ticker": "IBIH",
         "maturity": 2031,
         "name": "iShares iBonds Oct 2031 Term TIPS ETF",
-        "prevClose": 25.34,
-        "ytm": 4.7,
+        "prevClose": 25.28,
+        "ytm": 4.69,
         "enay": 4.57,
-        "realYield": 2.49
+        "realYield": 2.54
       },
       {
         "ticker": "IBII",
         "maturity": 2032,
         "name": "iShares iBonds Oct 2032 Term TIPS ETF",
-        "prevClose": 24.96,
+        "prevClose": 24.89,
         "ytm": 4.68,
-        "enay": 4.56,
-        "realYield": 2.48
+        "enay": 4.57,
+        "realYield": 2.53
       },
       {
         "ticker": "IBIJ",
         "maturity": 2033,
         "name": "iShares iBonds Oct 2033 Term TIPS ETF",
-        "prevClose": 24.91,
+        "prevClose": 24.84,
         "ytm": 4.7,
-        "enay": 4.57,
-        "realYield": 2.53
+        "enay": 4.59,
+        "realYield": 2.56
       },
       {
         "ticker": "IBIK",
         "maturity": 2034,
         "name": "iShares iBonds Oct 2034 Term TIPS ETF",
-        "prevClose": 24.63,
+        "prevClose": 24.56,
         "ytm": 4.74,
-        "enay": 4.62,
-        "realYield": 2.57
+        "enay": 4.63,
+        "realYield": 2.61
       },
       {
         "ticker": "IBIL",
         "maturity": 2035,
         "name": "iShares iBonds Oct 2035 Term TIPS ETF",
-        "prevClose": 24.39,
+        "prevClose": 24.32,
         "ytm": 4.8,
-        "enay": 4.68,
-        "realYield": 2.64
+        "enay": 4.69,
+        "realYield": 2.66
       },
       {
         "ticker": "IBIM",
         "maturity": 2036,
         "name": "iShares iBonds Oct 2036 Term TIPS ETF",
-        "prevClose": 24.3,
+        "prevClose": 24.24,
         "ytm": 4.86,
-        "enay": 4.74,
-        "realYield": 2.69
+        "enay": 4.75,
+        "realYield": 2.71
       }
     ]
   },
   "treasury": {
-    "enayAsOf": "2026-11-06",
+    "enayAsOf": "2026-11-09",
     "funds": [
       {
         "ticker": "IBTH",
         "maturity": 2027,
         "name": "iShares iBonds Dec 2027 Term Treasury ETF",
-        "prevClose": 22.32,
-        "ytm": 4.28,
-        "enay": 4.07
+        "prevClose": 22.31,
+        "ytm": 4.31,
+        "enay": 4.17
       },
       {
         "ticker": "IBTI",
         "maturity": 2028,
         "name": "iShares iBonds Dec 2028 Term Treasury ETF",
-        "prevClose": 22.0,
-        "ytm": 4.49,
-        "enay": 4.36
+        "prevClose": 21.98,
+        "ytm": 4.54,
+        "enay": 4.47
       },
       {
         "ticker": "IBTJ",
         "maturity": 2029,
         "name": "iShares iBonds Dec 2029 Term Treasury ETF",
-        "prevClose": 21.41,
-        "ytm": 4.57,
-        "enay": 4.46
+        "prevClose": 21.4,
+        "ytm": 4.6,
+        "enay": 4.51
       },
       {
         "ticker": "IBTK",
         "maturity": 2030,
         "name": "iShares iBonds Dec 2030 Term Treasury ETF",
-        "prevClose": 19.23,
-        "ytm": 4.62,
-        "enay": 4.53
+        "prevClose": 19.22,
+        "ytm": 4.64,
+        "enay": 4.55
       },
       {
         "ticker": "IBTL",
         "maturity": 2031,
         "name": "iShares iBonds Dec 2031 Term Treasury ETF",
-        "prevClose": 19.79,
-        "ytm": 4.65,
-        "enay": 4.56
+        "prevClose": 19.77,
+        "ytm": 4.67,
+        "enay": 4.59
       },
       {
         "ticker": "IBTM",
         "maturity": 2032,
         "name": "iShares iBonds Dec 2032 Term Treasury ETF",
-        "prevClose": 22.19,
-        "ytm": 4.7,
-        "enay": 4.61
+        "prevClose": 22.17,
+        "ytm": 4.71,
+        "enay": 4.63
       },
       {
         "ticker": "IBTO",
         "maturity": 2033,
         "name": "iShares iBonds Dec 2033 Term Treasury ETF",
-        "prevClose": 23.51,
-        "ytm": 4.73,
-        "enay": 4.65
+        "prevClose": 23.49,
+        "ytm": 4.75,
+        "enay": 4.68
       },
       {
         "ticker": "IBTP",
         "maturity": 2034,
         "name": "iShares iBonds Dec 2034 Term Treasury ETF",
-        "prevClose": 24.71,
-        "ytm": 4.78,
-        "enay": 4.69
+        "prevClose": 24.68,
+        "ytm": 4.79,
+        "enay": 4.71
       },
       {
         "ticker": "IBTQ",
         "maturity": 2035,
         "name": "iShares iBonds Dec 2035 Term Treasury ETF",
-        "prevClose": 24.33,
-        "ytm": 4.82,
-        "enay": 4.74
+        "prevClose": 24.31,
+        "ytm": 4.83,
+        "enay": 4.75
       },
       {
         "ticker": "IBTR",
         "maturity": 2036,
         "name": "iShares iBonds Dec 2036 Term Treasury ETF",
-        "prevClose": 24.16,
-        "ytm": 4.85,
-        "enay": 4.77
+        "prevClose": 24.15,
+        "ytm": 4.86,
+        "enay": 4.78
       }
     ]
   },
   "muni": {
-    "enayAsOf": "2026-11-06",
+    "enayAsOf": "2026-11-09",
     "funds": [
       {
         "ticker": "IBMP",
         "maturity": 2027,
         "name": "iShares iBonds Dec 2027 Term Muni Bond ETF",
-        "prevClose": 25.26,
-        "ytm": 2.92,
-        "enay": 2.98
+        "prevClose": 25.3,
+        "ytm": 2.89,
+        "enay": 2.74
       },
       {
         "ticker": "IBMQ",
         "maturity": 2028,
         "name": "iShares iBonds Dec 2028 Term Muni Bond ETF",
-        "prevClose": 25.45,
-        "ytm": 3.09,
-        "enay": 2.61
+        "prevClose": 25.46,
+        "ytm": 3.08,
+        "enay": 2.59
       },
       {
         "ticker": "IBMR",
         "maturity": 2029,
         "name": "iShares iBonds Dec 2029 Term Muni Bond ETF",
-        "prevClose": 25.22,
-        "ytm": 3.15,
-        "enay": 2.71
+        "prevClose": 25.23,
+        "ytm": 3.14,
+        "enay": 2.7
       },
       {
         "ticker": "IBMS",
         "maturity": 2030,
         "name": "iShares iBonds Dec 2030 Term Muni Bond ETF",
-        "prevClose": 25.68,
-        "ytm": 3.14,
+        "prevClose": 25.69,
+        "ytm": 3.13,
         "enay": 2.85
       },
       {
         "ticker": "IBMT",
         "maturity": 2031,
         "name": "iShares iBonds Dec 2031 Term Muni Bond ETF",
-        "prevClose": 25.56,
-        "ytm": 3.27,
-        "enay": 2.97
+        "prevClose": 25.57,
+        "ytm": 3.24,
+        "enay": 2.95
       },
       {
         "ticker": "IBMU",
         "maturity": 2032,
         "name": "iShares iBonds Dec 2032 Term Muni Bond ETF",
-        "prevClose": 25.2,
-        "ytm": 3.33,
-        "enay": 3.04
+        "prevClose": 25.22,
+        "ytm": 3.32,
+        "enay": 3.02
       },
       {
         "ticker": "IBMV",
         "maturity": 2033,
         "name": "iShares iBonds Dec 2033 Term Muni Bond ETF",
-        "prevClose": 25.11,
-        "ytm": 3.39,
-        "enay": 3.13
+        "prevClose": 25.14,
+        "ytm": 3.38,
+        "enay": 3.12
       },
       {
         "ticker": "IBMW",
         "maturity": 2034,
         "name": "iShares iBonds Dec 2034 Term Muni Bond ETF",
-        "prevClose": 25.0,
-        "ytm": 3.62,
-        "enay": 3.35
+        "prevClose": 25.03,
+        "ytm": 3.58,
+        "enay": 3.3
       },
       {
         "ticker": "IBMX",
         "maturity": 2035,
         "name": "iShares iBonds Dec 2035 Term Muni Bond ETF",
-        "prevClose": 24.83,
-        "ytm": 3.57,
-        "enay": 3.31
+        "prevClose": 24.89,
+        "ytm": 3.56,
+        "enay": 3.28
       }
     ]
   }
