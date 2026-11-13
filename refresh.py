@@ -16,6 +16,9 @@ Treasury, and muni, and weighted average YTM for TIPS.
 
 Series: TIPS IBIx (Oct), Corporate IBDx/IBCx (Dec 15), Treasury IBTx (Dec 15),
 Muni IBMx (Dec 1). Long-dated Treasury IBGx and high yield are ignored.
+Funds maturing in the input file's as-of year, or earlier, are omitted before
+ENAY is computed. That year is PJTXX cash in the ladder, not a rung, and a
+near-zero duration would turn a 1–2 cent NAV/price gap into an extreme yield.
 Muni ENAY is the tax-exempt figure, not tax-equivalent.
 TIPS real yield is the feed's yieldToWorst.
 YTM is weightedAvgYieldToMaturity, or yieldToWorst when the feed omits it.
@@ -286,6 +289,7 @@ def apply_feed(data, y):
     if not isinstance(data, list) or not data or not all(isinstance(v, dict) for v in data):
         fail("unexpected BlackRock data shape (expected a list of funds)")
     asofs, cnt, seen = {}, {s: 0 for s in SERIES}, {s: set() for s in SERIES}
+    # Same cutoff as ladder.html: this as-of year (fallback 2026) is PJTXX cash.
     base_year = int(str(y.get("asOf") or "2026")[:4])
     for series in SERIES:
         y.setdefault(series, {"enayAsOf": None, "funds": []})
@@ -301,6 +305,17 @@ def apply_feed(data, y):
             continue
         try:
             mat = int(row["maturityYear"])
+        except Exception as ex:
+            fail(f"{ticker}: missing/invalid maturity ({ex.__class__.__name__}: {ex})")
+        # Skip before ENAY. Near maturity, duration collapses and a 1–2 cent
+        # NAV/price gap (or a zero duration) must not fail the refresh.
+        if mat <= base_year:
+            print(f"  - {ticker} matures {mat}; not a ladder rung (as-of year {base_year})")
+            continue
+        dur = row.get("effectiveDuration")
+        if not _num(dur) or float(dur) <= 0:
+            fail(f"{ticker}: effectiveDuration {dur!r} is not positive")
+        try:
             enay = enay_of(row)
             ytw = float(row["yieldToWorst"])
             weighted = row.get("weightedAvgYieldToMaturity")
@@ -319,8 +334,6 @@ def apply_feed(data, y):
                 fail(f"{ticker}: implausible {label} {value:.3f}%")
         if series == "tips" and not _yield_ok(ytw):
             fail(f"{ticker}: implausible real yield {ytw:.3f}%")
-        if mat <= base_year:
-            continue
         fund = next((item for item in y[series]["funds"] if item.get("ticker") == ticker), None)
         if fund is None:
             fund = {"ticker": ticker, "maturity": mat, "name": "", "ytm": None, "enay": None}

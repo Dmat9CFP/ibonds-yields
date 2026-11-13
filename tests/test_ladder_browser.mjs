@@ -328,6 +328,55 @@ try {
   await page.evaluate(() => window.__ladder.refreshYields());
   await page.waitForFunction(() => document.getElementById("refreshStatus").textContent.startsWith("Timeout:"), { timeout: 20000 });
   check(await fp() === await fp(), "timeout leaves the page usable");
+
+  const matured = await page.evaluate(async () => {
+    const year = parseInt(String(window.__ladder.Y.asOf || "2026").slice(0, 4), 10);
+    const ms = Date.UTC(year, 10, 12, 21, 0, 0);
+    const row = (ticker, maturityYear, kind, extra) => Object.assign({
+      ticker,
+      maturityYear,
+      name: "iShares iBonds " + ticker,
+      types: [kind, "iBonds"],
+      closingPrice: 25.61,
+      navAmount: 25.627495,
+      effectiveDuration: 0.00597,
+      yieldToWorst: 2.63,
+      netr: 0.1,
+      weightedAvgYieldToMaturity: 2.8,
+      asOfDates: { closingPriceAsOfDate: ms, yieldToWorst: ms },
+    }, extra || {});
+    const before = {
+      ibds: window.__ladder.Y.corporate.funds.find((f) => f.ticker === "IBDS").enay,
+      tickers: window.__ladder.Y.corporate.funds.map((f) => f.ticker)
+        .concat(window.__ladder.Y.treasury.funds.map((f) => f.ticker))
+        .concat(window.__ladder.Y.muni.funds.map((f) => f.ticker)),
+    };
+    const message = await window.__ladder.importBuffer(new TextEncoder().encode(JSON.stringify([
+      row("IBMO", year, "Municipal"),
+      row("IBTG", year, "Treasury", { effectiveDuration: 0, closingPrice: 22.85, navAmount: 22.85 }),
+      row("IBDR", year, "Corporate", { closingPrice: 30, navAmount: 25, effectiveDuration: 0.01, yieldToWorst: 4.07 }),
+      row("IBDS", year + 1, "Corporate", { effectiveDuration: -1, closingPrice: 24.13, navAmount: 24.13, yieldToWorst: 4.5 }),
+      row("IBMP", year + 1, "Municipal", { effectiveDuration: 2, closingPrice: 25.31, navAmount: 25.4, yieldToWorst: 2.94, netr: 0.1 }),
+    ])), "table.jsn");
+    const ibds = window.__ladder.Y.corporate.funds.find((f) => f.ticker === "IBDS");
+    const ibmp = window.__ladder.Y.muni.funds.find((f) => f.ticker === "IBMP");
+    const tickers = window.__ladder.Y.corporate.funds.map((f) => f.ticker)
+      .concat(window.__ladder.Y.treasury.funds.map((f) => f.ticker))
+      .concat(window.__ladder.Y.muni.funds.map((f) => f.ticker));
+    return {
+      message,
+      year,
+      ibdsEnay: ibds && ibds.enay,
+      ibdsSame: ibds && ibds.enay === before.ibds,
+      ibmpEnay: ibmp && ibmp.enay,
+      ibmpMaturity: ibmp && ibmp.maturity,
+      added: tickers.filter((t) => !before.tickers.includes(t)),
+    };
+  });
+  check(matured.ibdsSame, "negative duration on a ladder fund is not imported: " + matured.ibdsEnay);
+  check(matured.ibmpEnay === 3.02 && matured.ibmpMaturity === matured.year + 1, "a real rung still imports: " + JSON.stringify(matured));
+  check(!matured.added.some((t) => ["IBMO", "IBTG", "IBDR"].includes(t)), "near-maturity tickers are not added: " + matured.added.join(","));
+  check(/IBDS/.test(matured.message) && !/IBMO|IBTG|IBDR/.test(matured.message), "only the kept fund is reported invalid: " + matured.message);
 } catch (err) {
   failures.push(err && err.stack ? err.stack : String(err));
   try {
