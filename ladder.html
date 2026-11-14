@@ -1568,9 +1568,11 @@ function applyBlkJson(j,name){
   const FT={tips:'Tips',corporate:'Corporate',treasury:'Treasury',muni:'Municipal'};
   for(const x of arr){const t=String(x&&x.ticker||'').trim().toUpperCase();const s=seriesOf(t);if(!s)continue;
     if(!(x.types||[]).includes(FT[s]))continue;
-    const ytw=+x.yieldToWorst,wy=x.weightedAvgYieldToMaturity,e=blkEnay(x),ytm=wy!=null&&wy!==''?+wy:(s==='tips'?NaN:ytw),mat=parseInt(x.maturityYear,10);
+    const mat=parseInt(x.maturityYear,10);
+    if(mat<=baseY)continue;   // as-of year or earlier is PJTXX cash. Skip before ENAY: near-zero duration is not a bad yield.
+    const dur=+x.effectiveDuration;if(!(dur>0)||!isFinite(dur)){bad.push(t);continue}
+    const ytw=+x.yieldToWorst,wy=x.weightedAvgYieldToMaturity,e=blkEnay(x),ytm=wy!=null&&wy!==''?+wy:(s==='tips'?NaN:ytw);
     if(![e,ytm,ytw,mat].every(isFinite)||e<-2||e>15){bad.push(t);continue}
-    if(mat<=baseY)continue;   // matures in the as-of year → distribution year mapped to PJTXX cash
     let f=Y[s].funds.find(z=>z.ticker===t);
     if(!f){f={ticker:t,maturity:mat,name:'',ytm:null,enay:null};if(s==='tips')f.realYield=null;Y[s].funds.push(f)}
     f.maturity=mat;if(x.name)f.name=String(x.name).replace(/®/g,'');f.prevClose=Math.round(100*x.closingPrice)/100;
